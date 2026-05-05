@@ -1,9 +1,4 @@
-#include <iostream>
-#include <vector>
-#include <map>
-#include <string>
-#include <fstream>
-#include <sstream>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -13,7 +8,7 @@ public:
     vector<VariableAleatoria*> padres;
     vector<VariableAleatoria*> hijos;
 
-    map<string,double> tablaProbapilidadCondicional;
+    map<string,double> tablaProbabilidadCondicional;
 
     VariableAleatoria(string nombre){
         this->nombre = nombre;

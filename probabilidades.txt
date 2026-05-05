@@ -1,0 +1,7 @@
+A
+true 0.2
+false 0.8
+
+B | A
+A=true true 0.7
+A=false true 0.1

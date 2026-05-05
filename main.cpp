@@ -13,7 +13,7 @@ public:
     vector<VariableAleatoria*> padres;
     vector<VariableAleatoria*> hijos;
 
-    map<string,double> tablaProbapilidadCondicional;
+    map<string,double> tablaProbabilidadCondicional;
 
     VariableAleatoria(string nombre){
         this->nombre = nombre;

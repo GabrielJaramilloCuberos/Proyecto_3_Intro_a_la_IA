@@ -5,3 +5,7 @@ false 0.8
 B | A
 A=true true 0.7
 A=false true 0.1
+
+D | A
+A=true true 0.4
+A=false true 0.2

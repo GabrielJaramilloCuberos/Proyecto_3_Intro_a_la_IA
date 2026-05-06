@@ -1,11 +1,13 @@
-A
+LLUVIA
 true 0.2
 false 0.8
 
-B | A
-A=true true 0.7
-A=false true 0.1
+ROCIADOR | LLUVIA
+LLUVIA=true true 0.01
+LLUVIA=false true 0.4
 
-D | A
-A=true true 0.4
-A=false true 0.2
+HIERBAHUMEDA | ROCIADOR LLUVIA
+ROCIADOR=false,LLUVIA=false true 0
+ROCIADOR=false,LLUVIA=true true 0.8
+ROCIADOR=true,LLUVIA=false true 0.9
+ROCIADOR=true,LLUVIA=true true 0.99

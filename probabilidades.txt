@@ -1,13 +1,17 @@
-LLUVIA
-true 0.2
-false 0.8
+NUBLADO
+true 0.5
+false 0.5
 
-ROCIADOR | LLUVIA
-LLUVIA=true true 0.01
-LLUVIA=false true 0.4
+LLUVIA | NUBLADO
+NUBLADO=true true 0.8
+NUBLADO=false true 0.2
 
-HIERBAHUMEDA | ROCIADOR LLUVIA
-ROCIADOR=false,LLUVIA=false true 0
-ROCIADOR=false,LLUVIA=true true 0.8
-ROCIADOR=true,LLUVIA=false true 0.9
-ROCIADOR=true,LLUVIA=true true 0.99
+ROCIADOR | NUBLADO
+NUBLADO=true true 0.1
+NUBLADO=false true 0.5
+
+HIERBAHUMEDA | LLUVIA,ROCIADOR
+LLUVIA=true,ROCIADOR=true true 0.99
+LLUVIA=true,ROCIADOR=false true 0.90
+LLUVIA=false,ROCIADOR=true true 0.90
+LLUVIA=false,ROCIADOR=false true 0.00

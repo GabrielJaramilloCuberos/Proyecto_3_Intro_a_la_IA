@@ -34,7 +34,7 @@ class RedBayesiana {
         void cargarTablaProbabilidadConjunta(string ruta);
         void mostrarVariables();
         void mostrarTablaProbabilidadConjunta();
-
+        double obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia);
 };
 
 #endif // REDBAYESIANA_H

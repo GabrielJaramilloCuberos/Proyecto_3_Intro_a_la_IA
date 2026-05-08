@@ -36,7 +36,7 @@ class VariableAleatoria {
         void setNombre(string nombre);
         vector<VariableAleatoria*> getPadres();
         vector<VariableAleatoria*> getHijos();
-        map<string, double> getTablaProbabilidadCondicional();
+        map<string, double>& getTablaProbabilidadCondicional();
         void setTablaProbabilidadCondicional(map<string, double> tabla);
 
         // Operaciones propias

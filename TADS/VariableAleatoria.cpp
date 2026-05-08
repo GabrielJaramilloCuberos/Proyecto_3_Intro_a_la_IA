@@ -31,7 +31,7 @@ vector<VariableAleatoria*> VariableAleatoria::getHijos() {
     return hijos;
 }
 
-map<string, double> VariableAleatoria::getTablaProbabilidadCondicional() {
+map<string, double>& VariableAleatoria::getTablaProbabilidadCondicional() {
     return tablaProbabilidadCondicional;
 }
 

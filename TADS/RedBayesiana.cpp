@@ -163,3 +163,40 @@ void RedBayesiana::mostrarTablaProbabilidadConjunta() {
     }
     cout << endl;
 }
+
+double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia){
+
+    string clave ="";
+
+    for(auto padre: variable -> getPadres()){
+
+        clave += padre -> getNombre() + "=";
+
+        if(evidencia[padre -> getNombre()]){
+            clave += "true";
+        }
+        else{
+            clave += "false";
+        }
+
+        clave += ",";
+    }
+
+    if(!clave.empty()){
+        clave.pop_back();
+    }
+
+    auto& tabla = variable -> getTablaProbabilidadCondicional();
+    if(tabla.find(clave) == tabla.end()){
+        cout << "Error: clave no encontrada: " << clave << endl;
+        return 0;
+    }
+
+    double probabilidad = tabla[clave];
+
+    if(valor){
+        return probabilidad;
+    }
+    
+    return 1-probabilidad;
+}

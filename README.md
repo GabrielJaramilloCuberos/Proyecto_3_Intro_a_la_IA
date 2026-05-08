@@ -126,25 +126,3 @@ g++ main.cpp TADS/VariableAleatoria.cpp TADS/RedBayesiana.cpp -o motor
 ```bash
 ./motor
 ```
-
-### Uso del menú
-```
-<-----> Bienvenido al motor de inferencia <----->
-
-Menu:
-1. Cargar variables
-2. Cargar probabilidades
-0. Salir
-```
-
-1. Seleccionar opción `1` e ingresar el nombre del archivo de variables (sin `.txt`).
-2. Seleccionar opción `2` e ingresar el nombre del archivo de probabilidades (sin `.txt`).
-3. El programa mostrará la estructura de la red y las tablas de probabilidad cargadas.
-
----
-
-## Tecnologías
-
-- **Lenguaje:** C++17
-- **Paradigma:** Programación modular con TADs (Tipos Abstractos de Datos)
-- **Estructuras clave:** `map`, `vector`, grafos dirigidos acíclicos (DAG)

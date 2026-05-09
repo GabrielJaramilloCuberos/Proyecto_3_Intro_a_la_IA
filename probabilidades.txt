@@ -14,4 +14,4 @@ HIERBAHUMEDA | LLUVIA,ROCIADOR
 LLUVIA=true,ROCIADOR=true true 0.99
 LLUVIA=true,ROCIADOR=false true 0.90
 LLUVIA=false,ROCIADOR=true true 0.90
-LLUVIA=false,ROCIADOR=false true 0.00
+LLUVIA=false,ROCIADOR=false true 0.05

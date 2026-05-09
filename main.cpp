@@ -24,7 +24,7 @@ int main() {
     while (opcion != 0){
 
         cout << "Menu:" << endl;
-        cout << "1. Cargar variables\n2. Cargar probabilidades\n3. Obtener probabilidad local\n0. Salir\n";
+        cout << "1. Cargar variables\n2. Cargar probabilidades\n3. Obtener probabilidad local\n4. Consulta por enumeracion\n0. Salir\n";
         
         cout << "Ingrese la opcion: "; 
         cin >> opcion;
@@ -55,6 +55,15 @@ int main() {
                 cerr << "Error al abrir archivo." << endl;
                 break;
             }
+
+            vector<VariableAleatoria*> orden = redBayesiana.obtenerOrdenTopologico();
+            cout << "Orden topologico:" << endl;
+
+            for(auto variable: orden){
+                cout << variable -> getNombre() << " ";
+            }
+
+            cout << endl << endl;
 
             break;
         }
@@ -116,9 +125,49 @@ int main() {
             cout << "Probabilidad: " << resultado << endl << endl;
             break;
         }
+        case 4:{
+            map<string,VariableAleatoria*> contenedor = redBayesiana.getVariablesAleatorias();
 
+            if(contenedor.empty()){
+                cout << endl;
+                cout << "Error: no hay red bayesiana." << endl << endl;
+                break;
+            }
+
+            string variableConsulta;
+
+            cout << endl;
+            cout << "Ingrese la variable de consulta: ";
+            cin >> variableConsulta;
+
+            int cantidadEvidencias;
+            cout << "Ingrese la cantidad de evidencias: ";
+            cin >> cantidadEvidencias;
+
+            map<string,bool> evidencia;
+
+            for(int i=0; i<cantidadEvidencias; i++){
+                string variable;
+                string valorVariable;
+
+                cout << endl << "Ingrese la variable de evidencia: ";
+                cin >> variable;
+
+                cout << "Ingrese valor (true/false): ";
+                cin >> valorVariable;
+
+                evidencia[variable] = (valorVariable == "true");
+            }
+
+            map<bool,double> resultado = redBayesiana.consultaPorEnumeracion(variableConsulta,evidencia);
+
+            cout << endl << "P(" << variableConsulta << "=true | evidencia) = " << resultado[true] << endl;
+            cout << "P(" << variableConsulta << "=false | evidencia) = " << resultado[false] << endl << endl;
+
+            break;
+        }
         default:
-            cout << "Opcion invalida." << endl << endl;
+            cout << endl << "Opcion invalida." << endl << endl;
             break;
         }
 

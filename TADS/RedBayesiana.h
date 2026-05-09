@@ -8,6 +8,7 @@
 
 #include <map>
 #include <string>
+#include <algorithm>
 #include "VariableAleatoria.h"
 
 using namespace std;
@@ -35,6 +36,10 @@ class RedBayesiana {
         void mostrarVariables();
         void mostrarTablaProbabilidadConjunta();
         double obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia);
+        double enumerarTodas(vector<VariableAleatoria*> variables, map<string,bool>& evidencia);
+        map<bool,double> consultaPorEnumeracion(string variableConsulta, map<string,bool>& evidencia);
+        vector<VariableAleatoria*> obtenerOrdenTopologico();
+        void dfsTopologico(VariableAleatoria* variable, map<string,bool>& variablesVisitadas, vector<VariableAleatoria*>& orden);
 };
 
 #endif // REDBAYESIANA_H

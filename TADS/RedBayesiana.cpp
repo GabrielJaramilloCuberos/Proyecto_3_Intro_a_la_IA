@@ -165,22 +165,34 @@ void RedBayesiana::mostrarTablaProbabilidadConjunta() {
 }
 
 double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia){
-
     string clave ="";
 
-    for(auto padre: variable -> getPadres()){
+    vector<VariableAleatoria*> padres = variable->getPadres();
 
-        clave += padre -> getNombre() + "=";
+sort(padres.begin(), padres.end(),
+[](VariableAleatoria* a, VariableAleatoria* b){
+    return a->getNombre() < b->getNombre();
+});
 
-        if(evidencia[padre -> getNombre()]){
-            clave += "true";
-        }
-        else{
-            clave += "false";
-        }
+for(auto padre : padres){
 
-        clave += ",";
+    clave += padre->getNombre() + "=";
+
+    if(evidencia.find(padre->getNombre()) == evidencia.end()){
+        cout << "Error: evidencia faltante para "
+             << padre->getNombre() << endl;
+        return 0;
     }
+
+    if(evidencia.at(padre->getNombre())){
+        clave += "true";
+    }
+    else{
+        clave += "false";
+    }
+
+    clave += ",";
+}
 
     if(!clave.empty()){
         clave.pop_back();
@@ -199,4 +211,89 @@ double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, bool valor
     }
     
     return 1-probabilidad;
+}
+
+double RedBayesiana::enumerarTodas(vector<VariableAleatoria*> variables, map<string,bool>& evidencia){
+    if(variables.empty()){
+        return 1.0;
+    }
+
+    VariableAleatoria* varTem = variables[0];
+
+    vector<VariableAleatoria*> resto(variables.begin()+1, variables.end());
+
+    if(evidencia.find(varTem -> getNombre()) != evidencia.end()){
+        bool valorTem = evidencia[varTem -> getNombre()];
+
+        return obtenerProbabilidad(varTem, valorTem, evidencia) * enumerarTodas(resto, evidencia);
+
+    }
+    else{
+        double suma = 0;
+
+        evidencia[varTem -> getNombre()] = true;
+        suma += obtenerProbabilidad(varTem, true, evidencia) * enumerarTodas(resto, evidencia);
+
+        evidencia[varTem -> getNombre()] = false;
+        suma += obtenerProbabilidad(varTem, false, evidencia) * enumerarTodas(resto, evidencia);
+
+        evidencia.erase(varTem -> getNombre());
+
+        return suma;
+    }
+}
+
+map<bool,double> RedBayesiana::consultaPorEnumeracion(string variableConsulta, map<string,bool>& evidencia){
+    map<bool,double> distribucion;
+
+    VariableAleatoria* varX = variablesAleatorias[variableConsulta];
+
+    vector<VariableAleatoria*> variables = obtenerOrdenTopologico();
+
+    evidencia[variableConsulta] = true;
+    double probVerdadero = enumerarTodas(variables, evidencia);
+
+    evidencia[variableConsulta] = false;
+    double probFalse = enumerarTodas(variables, evidencia);
+
+    evidencia.erase(variableConsulta);
+
+    double alfa = probFalse + probVerdadero;
+
+    distribucion[true] = probVerdadero/alfa;
+    distribucion[false] = probFalse/alfa;
+
+    return distribucion;
+}
+
+void RedBayesiana::dfsTopologico(VariableAleatoria* variable, map<string,bool>& variablesVisitadas, vector<VariableAleatoria*>& orden){
+    variablesVisitadas[variable -> getNombre()] = true;
+
+    for(auto hijo: variable -> getHijos()){
+        if(!variablesVisitadas[hijo -> getNombre()]){
+            dfsTopologico(hijo, variablesVisitadas, orden);
+        }
+    }
+
+    orden.push_back(variable);
+}
+
+vector<VariableAleatoria*> RedBayesiana::obtenerOrdenTopologico(){
+    vector<VariableAleatoria*> orden;
+
+    map<string,bool> variablesVisitadas;
+
+    for(auto& par: variablesAleatorias){
+        variablesVisitadas[par.first] = false;
+    }
+
+    for(auto& par: variablesAleatorias){
+        if(!variablesVisitadas[par.first]){
+            dfsTopologico(par.second, variablesVisitadas, orden);
+        }
+    }
+
+    reverse(orden.begin(), orden.end());
+
+    return orden;
 }

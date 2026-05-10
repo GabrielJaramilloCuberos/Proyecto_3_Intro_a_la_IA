@@ -50,11 +50,11 @@ class RedBayesiana {
         // Muestra en consola la CPT de cada variable
         void mostrarTablaProbabilidadConjunta();
         // Consulta P(variable = valor | evidencia) usando la CPT directamente
-        double obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia);
+        double obtenerProbabilidad(VariableAleatoria* variable, string valor, map<string,string>& evidencia);
         // Funcion recursiva auxiliar del algoritmo de enumeracion
-        double enumerarTodas(vector<VariableAleatoria*> variables, map<string,bool>& evidencia);
+        double enumerarTodas(vector<VariableAleatoria*> variables, map<string,string>& evidencia, int profundidad = 0);
         // Calcula la distribucion de probabilidad de una variable dada una evidencia
-        map<bool,double> consultaPorEnumeracion(string variableConsulta, map<string,bool>& evidencia);
+        map<string,double> consultaPorEnumeracion(string variableConsulta, map<string,string>& evidencia);
         // Ordena las variables de la red segun el orden topologico del DAG
         vector<VariableAleatoria*> obtenerOrdenTopologico();
         // Funcion auxiliar DFS para el ordenamiento topologico

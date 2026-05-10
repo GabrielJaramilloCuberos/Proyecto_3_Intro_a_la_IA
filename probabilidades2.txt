@@ -1,0 +1,31 @@
+FEVER
+low 0.6
+high 0.4
+
+FLU | FEVER
+FEVER=low yes 0.1
+FEVER=low no 0.9
+FEVER=high yes 0.7
+FEVER=high no 0.3
+
+COLD | FEVER
+FEVER=low yes 0.3
+FEVER=low no 0.7
+FEVER=high yes 0.2
+FEVER=high no 0.8
+
+HEADACHE | FLU,COLD
+FLU=yes,COLD=yes yes 0.9
+FLU=yes,COLD=yes no 0.1
+FLU=yes,COLD=no yes 0.7
+FLU=yes,COLD=no no 0.3
+FLU=no,COLD=yes yes 0.5
+FLU=no,COLD=yes no 0.5
+FLU=no,COLD=no yes 0.1
+FLU=no,COLD=no no 0.9
+
+FATIGUE | FLU
+FLU=yes yes 0.8
+FLU=yes no 0.2
+FLU=no yes 0.2
+FLU=no no 0.8

@@ -15,35 +15,42 @@ using namespace std;
  * @param variableConsulta Almacena las variable que solicita el usuario
  * @param evidencia Almacena la evidencia que adjunta el usuario
  */
-bool parsearConsulta(const string& consulta, string& variableConsulta, map<string,bool>& evidencia){
-    // Extraer el contenido entre P( y )
+bool parsearConsulta(const string& consulta, string& variableConsulta, string& valorConsulta, map<string,string>& evidencia) {
     size_t inicio = consulta.find('(');
     size_t fin    = consulta.rfind(')');
     if (inicio == string::npos || fin == string::npos) return false;
 
     string contenido = consulta.substr(inicio + 1, fin - inicio - 1);
 
-    // Si no hay '|', la consulta no tiene evidencias -> solo parsear la variable
     size_t separador = contenido.find('|');
     if (separador == string::npos) {
         string item;
         stringstream(contenido) >> item;
         size_t eq = item.find('=');
-        variableConsulta = (eq != string::npos) ? item.substr(0, eq) : item;
+        if (eq != string::npos) {
+            variableConsulta = item.substr(0, eq);
+            valorConsulta    = item.substr(eq + 1);
+        } else {
+            variableConsulta = item;
+            valorConsulta    = "";
+        }
         return true;
     }
 
-    // Hay evidencias: dividir por '|'
     string izquierda = contenido.substr(0, separador);
     string derecha   = contenido.substr(separador + 1);
 
-    // Extraer el nombre de la variable consulta
     string token;
     stringstream(izquierda) >> token;
     size_t eq = token.find('=');
-    variableConsulta = (eq != string::npos) ? token.substr(0, eq) : token;
+    if (eq != string::npos) {
+        variableConsulta = token.substr(0, eq);
+        valorConsulta    = token.substr(eq + 1); // capturar el valor si viene especificado
+    } else {
+        variableConsulta = token;
+        valorConsulta    = "";
+    }
 
-    // Parsear cada par "VARIABLE=valor" separado por comas
     string par;
     stringstream ssDerecha(derecha);
     while (getline(ssDerecha, par, ',')) {
@@ -51,7 +58,8 @@ bool parsearConsulta(const string& consulta, string& variableConsulta, map<strin
         stringstream(par) >> item;
         size_t pos = item.find('=');
         if (pos == string::npos) return false;
-        evidencia[item.substr(0, pos)] = (item.substr(pos + 1) == "true");
+        // El valor ya no se convierte a bool, se guarda como string directamente
+        evidencia[item.substr(0, pos)] = item.substr(pos + 1);
     }
 
     return true;

@@ -102,36 +102,27 @@ int main() {
         // la tabla de probabilidad condicional de la variable indicada.
         // El usuario ingresa la variable, el valor y la evidencia necesaria.
         case 3: {
-            string nombreVariable;
-            string valorTexto;
+            cin.ignore();
+            cout << "Formato: P(VARIABLE=valor | EVIDENCIA1=valor,...)" << endl;
+            cout << "> ";
+            string consulta;
+            getline(cin, consulta);
 
-            cout << "Ingrese la variable: ";
-            cin >> nombreVariable;
-            cout << "Ingrese el valor (true/false): ";
-            cin >> valorTexto;
+            string variableConsulta, valorConsulta;
+            map<string,string> evidencia;
 
-            bool valor = (valorTexto == "true");
-
-            // Recopilar la evidencia necesaria para evaluar la CPT
-            int cantidadEvidencias;
-            cout << "Ingrese la cantidad de evidencias: ";
-            cin >> cantidadEvidencias;
-
-            map<string,bool> evidencia;
-            for (int i = 0; i < cantidadEvidencias; i++) {
-                string variableEvidencia;
-                string valorEvidencia;
-                cout << "Ingresar variable de evidencia: ";
-                cin >> variableEvidencia;
-                cout << "Ingresar el valor (true/false): ";
-                cin >> valorEvidencia;
-                evidencia[variableEvidencia] = (valorEvidencia == "true");
+            if (!parsearConsulta(consulta, variableConsulta, valorConsulta, evidencia)) {
+                cout << "Error: formato invalido." << endl << endl;
+                break;
+            }
+            if (valorConsulta.empty()) {
+                cout << "Error: debe especificar el valor. Ej: P(RAIN=none | ...)" << endl << endl;
+                break;
             }
 
-            VariableAleatoria* variable = redBayesiana.getVariablesAleatorias()[nombreVariable];
-            double resultado = redBayesiana.obtenerProbabilidad(variable, valor, evidencia);
-
-            cout << "Probabilidad: " << resultado << endl << endl;
+            VariableAleatoria* variable = redBayesiana.getVariablesAleatorias()[variableConsulta];
+            double resultado = redBayesiana.obtenerProbabilidad(variable, valorConsulta, evidencia);
+            cout << "P(" << variableConsulta << "=" << valorConsulta << " | evidencia) = " << resultado << endl << endl;            
             break;
         }
 
@@ -149,14 +140,14 @@ int main() {
 
             cin.ignore();
 
-            cout << endl << "Ingrese la consulta [Formato: P(VARIABLE=valor | EVIDENCIA1=valor,EVIDENCIA2=valor, ...)]: ";
+            cout << endl << "Ingrese la consulta [Formato: P(VARIABLE | EVIDENCIA1=valor,EVIDENCIA2=valor, ...)]: ";
             string consulta;
             getline(cin, consulta);
 
-            string variableConsulta;
-            map<string,bool> evidencia;
+            string variableConsulta, valorConsulta;
+            map<string,string> evidencia;
 
-            if (!parsearConsulta(consulta, variableConsulta, evidencia)) {
+            if (!parsearConsulta(consulta, variableConsulta, valorConsulta, evidencia)) {
                 cout << "Error: formato de consulta invalido." << endl << endl;
                 break;
             }
@@ -166,11 +157,14 @@ int main() {
                 break;
             }
 
-            map<bool,double> resultado = redBayesiana.consultaPorEnumeracion(variableConsulta, evidencia);
+            map<string,double> resultado = redBayesiana.consultaPorEnumeracion(variableConsulta, evidencia);
 
-            cout << endl << "P(" << variableConsulta << "=true  | evidencia) = " << resultado[true]  << endl;
-            cout << "P(" << variableConsulta << "=false | evidencia) = " << resultado[false] << endl << endl;
-            
+            cout << endl;
+            for (auto& par : resultado) {
+                cout << "P(" << variableConsulta << "=" << par.first << " | evidencia) = " << par.second << endl;
+            }
+            cout << endl;
+
             break;
         }
 

@@ -125,40 +125,36 @@ void RedBayesiana::cargarTablaProbabilidadConjunta(string ruta) {
             }
 
             // Formato "true/false probabilidad" (variable sin padres, clave vacia)
+            // Formato "valor probabilidad" (variable sin padres)
             if (tokens.size() == 2) {
-                string valor = tokens[0];
+                string valor       = tokens[0];
                 double probabilidad = stod(tokens[1]);
-                if (valor == "true") {
-                    variableActual->agregarEntradaTabla("", probabilidad);
-                }
+                // Registrar el valor como posible y guardarlo en la CPT con condicion vacia
+                variableActual->agregarValor(valor);
+                variableActual->agregarEntradaTabla("", valor, probabilidad);
             }
-            // Formato "condicion true/false probabilidad" (variable con padres)
+            // Formato "condicion valor probabilidad" (variable con padres)
             else if (tokens.size() == 3) {
                 string condicion    = tokens[0];
                 string valor        = tokens[1];
                 double probabilidad = stod(tokens[2]);
 
-                // Normalizar los componentes de la condicion alfabeticamente
-
+                // Normalizar condicion ordenando sus componentes alfabeticamente
                 vector<string> partes;
                 string parte;
                 stringstream ssCondicion(condicion);
-                
-                while(getline(ssCondicion, parte, ',')){
-                    partes.push_back(parte);
-                }
-                
+                while (getline(ssCondicion, parte, ',')) partes.push_back(parte);
                 sort(partes.begin(), partes.end());
 
-                string condicionNormalizada = "";
-                for(int i=0; i<partes.size(); i++){
-                    if(i>0) condicionNormalizada += ",";
-                    condicionNormalizada += partes[i];
+                string condicionNorm = "";
+                for (int i = 0; i < partes.size(); i++) {
+                    if (i > 0) condicionNorm += ",";
+                    condicionNorm += partes[i];
                 }
 
-                if (valor == "true") {
-                    variableActual->agregarEntradaTabla(condicionNormalizada, probabilidad);
-                }
+                // Registrar el valor como posible y guardarlo en la CPT
+                variableActual->agregarValor(valor);
+                variableActual->agregarEntradaTabla(condicionNorm, valor, probabilidad);
             }
         }
         cout << "Datos cargados" << endl;
@@ -190,11 +186,16 @@ void RedBayesiana::mostrarVariables() {
 void RedBayesiana::mostrarTablaProbabilidadConjunta() {
     for (auto& par : variablesAleatorias) {
         cout << "Variable: " << par.first << endl;
+        // Iterar sobre condiciones y luego sobre cada valor -> probabilidad
         for (auto& entrada : par.second->getTablaProbabilidadCondicional()) {
-            cout << entrada.first << " -> " << entrada.second << endl;
+            string condicion = entrada.first.empty() ? "(sin padres)" : entrada.first;
+            for (auto& valorProb : entrada.second) {
+                cout << "  " << condicion << " | " << valorProb.first
+                     << " -> " << valorProb.second << endl;
+            }
         }
+        cout << endl;
     }
-    cout << endl;
 }
 
 /**
@@ -209,44 +210,33 @@ void RedBayesiana::mostrarTablaProbabilidadConjunta() {
  * @param evidencia Mapa con los valores conocidos de otras variables
  * @return P(variable = valor | evidencia segun la CPT)
  */
-double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia) {
-    // Construir componentes de la clave como pares y ordenar alfabeticamente
-    
+double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, string valor, map<string,string>& evidencia) {
+    // Construir clave normalizada (ordenada) a partir de los padres
     vector<pair<string,string>> componentes;
     for (auto padre : variable->getPadres()) {
-
         if (evidencia.find(padre->getNombre()) == evidencia.end()) {
             cout << "Error: evidencia faltante para " << padre->getNombre() << endl;
             return 0;
         }
-
-        string valorPadre = evidencia.at(padre -> getNombre()) ? "true" : "false";
-        componentes.push_back({padre -> getNombre(), valorPadre});
+        componentes.push_back({padre->getNombre(), evidencia.at(padre->getNombre())});
     }
-
     sort(componentes.begin(), componentes.end());
 
     string clave = "";
-    for(int i=0; i<componentes.size(); i++){
-        if(i>0) clave += ",";
+    for (int i = 0; i < componentes.size(); i++) {
+        if (i > 0) clave += ",";
         clave += componentes[i].first + "=" + componentes[i].second;
     }
 
     auto& tabla = variable->getTablaProbabilidadCondicional();
-    if (tabla.find(clave) == tabla.end()) {
-        cout << "Error: clave no encontrada: " << clave << endl;
-        return 0;
-    }
-    auto& table = variable -> getTablaProbabilidadCondicional();
-    if(tabla.find(clave) == tabla.end()){
-        cout << "Error: clave no encontrada: " << clave << endl;
+    if (tabla.find(clave) == tabla.end() || tabla.at(clave).find(valor) == tabla.at(clave).end()) {
+        cout << "Error: no se encontro P(" << variable->getNombre()
+             << "=" << valor << " | " << clave << ")" << endl;
         return 0;
     }
 
-    double probabilidad = tabla[clave];
-
-    // P(true) viene directo de la tabla; P(false) es su complemento
-    return valor ? probabilidad : 1 - probabilidad;
+    // Ya no se necesita el complemento: todos los valores estan almacenados explicitamente
+    return tabla.at(clave).at(valor);
 }
 
 /**
@@ -260,9 +250,11 @@ double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, bool valor
  * @param evidencia Mapa de asignaciones conocidas (se modifica temporalmente)
  * @return Probabilidad conjunta acumulada hasta este punto de la recursion
  */
-double RedBayesiana::enumerarTodas(vector<VariableAleatoria*> variables, map<string,bool>& evidencia) {
-    // Caso base: no quedan variables por procesar, probabilidad acumulada = 1
+double RedBayesiana::enumerarTodas(vector<VariableAleatoria*> variables, map<string,string>& evidencia, int profundidad) {
+    string ind(profundidad * 2, ' ');
+
     if (variables.empty()) {
+        cout << ind << "-> prob. parcial = 1.0" << endl;
         return 1.0;
     }
 
@@ -270,22 +262,25 @@ double RedBayesiana::enumerarTodas(vector<VariableAleatoria*> variables, map<str
     vector<VariableAleatoria*> resto(variables.begin() + 1, variables.end());
 
     if (evidencia.find(varTem->getNombre()) != evidencia.end()) {
-        // La variable ya tiene valor asignado -> usar ese valor y continuar
-        bool valorTem = evidencia[varTem->getNombre()];
-        return obtenerProbabilidad(varTem, valorTem, evidencia) * enumerarTodas(resto, evidencia);
+        // Variable con valor conocido: usar directamente
+        string valorTem = evidencia[varTem->getNombre()];
+        double p = obtenerProbabilidad(varTem, valorTem, evidencia);
+        cout << ind << "[E] " << varTem->getNombre() << "=" << valorTem << " | P=" << p << endl;
+        return p * enumerarTodas(resto, evidencia, profundidad + 1);
     } else {
-        // La variable es desconocida -> sumar ambas ramas y marginalizar
+        // Variable desconocida: marginalizar sumando sobre TODOS sus valores posibles
+        cout << ind << "[M] " << varTem->getNombre() << " (marginalizando)" << endl;
         double suma = 0;
 
-        evidencia[varTem->getNombre()] = true;
-        suma += obtenerProbabilidad(varTem, true, evidencia) * enumerarTodas(resto, evidencia);
+        for (string val : varTem->getValores()) {
+            evidencia[varTem->getNombre()] = val;
+            double pVal = obtenerProbabilidad(varTem, val, evidencia);
+            cout << ind << "  rama " << val << " | P=" << pVal << endl;
+            suma += pVal * enumerarTodas(resto, evidencia, profundidad + 1);
+        }
 
-        evidencia[varTem->getNombre()] = false;
-        suma += obtenerProbabilidad(varTem, false, evidencia) * enumerarTodas(resto, evidencia);
-
-        // Restaurar la evidencia antes de retornar
         evidencia.erase(varTem->getNombre());
-
+        cout << ind << "  suma marginalizada = " << suma << endl;
         return suma;
     }
 }
@@ -301,46 +296,39 @@ double RedBayesiana::enumerarTodas(vector<VariableAleatoria*> variables, map<str
  * @param evidencia        Mapa de variables observadas con su valor conocido
  * @return Mapa {true -> P(X=true|e), false -> P(X=false|e)} normalizado
  */
-map<bool,double> RedBayesiana::consultaPorEnumeracion(string variableConsulta, map<string,bool>& evidencia) {
-    map<bool,double> distribucion;
-
+map<string,double> RedBayesiana::consultaPorEnumeracion(string variableConsulta, map<string,string>& evidencia) {
+    map<string,double> distribucion;
     vector<VariableAleatoria*> variables = obtenerOrdenTopologico();
+    VariableAleatoria* varX = variablesAleatorias[variableConsulta];
 
-    cout << endl << "TRAZA DE LA INFERENCIA" << endl;
-    cout << "Consulta: " << variableConsulta << endl;
-    cout << "Evidencia: ";
-    for(auto& par: evidencia){
-        cout << par.first << "=" << (par.second ? "true" : "false") << " ";
-    }
-
+    cout << "\n========== TRAZA DE INFERENCIA ==========" << endl;
+    cout << "Consulta  : " << variableConsulta << endl;
+    cout << "Evidencia : ";
+    for (auto& par : evidencia) cout << par.first << "=" << par.second << " ";
     cout << endl << "Orden topologico: ";
-    for(auto var: variables){
-        cout << var -> getNombre() << " ";
+    for (auto v : variables) cout << v->getNombre() << " ";
+    cout << "\n" << endl;
+
+    double total = 0;
+    // Iterar sobre todos los valores posibles de la variable consulta
+    for (string val : varX->getValores()) {
+        cout << "-- Enumeracion " << variableConsulta << " = " << val << " --" << endl;
+        evidencia[variableConsulta] = val;
+        double prob = enumerarTodas(variables, evidencia, 0);
+        distribucion[val] = prob;
+        total += prob;
+        cout << "   Resultado sin normalizar: " << prob << "\n" << endl;
     }
 
-    cout << endl << endl;
-
-    cout << "Enumeracion " << variableConsulta << " = true " << endl;
-    // Calcular probabilidad conjunta para cada posible valor de la variable consulta
-    evidencia[variableConsulta] = true;
-    double probVerdadero = enumerarTodas(variables, evidencia);
-    cout << "   Resultado sin normalizar: " << probVerdadero << endl << endl;
-
-    cout << "Enumeracion " << variableConsulta << " = false " << endl;
-    evidencia[variableConsulta] = false;
-    double probFalso = enumerarTodas(variables, evidencia);
-    cout << "   Resultado sin normalizar: " << probFalso << endl << endl;
-    
-    // Eliminar la variable consulta de la evidencia antes de retornar
     evidencia.erase(variableConsulta);
 
-    // Normalizar: alfa garantiza que la distribucion sume 1
-    double alfa = probVerdadero + probFalso;
-    cout << "Normalizacion:" << endl;
-    cout << "   alfa = 1/(" << probVerdadero << " + " << probFalso << ") = " << 1.0/alfa << endl;
-    distribucion[true]  = probVerdadero / alfa;
-    distribucion[false] = probFalso     / alfa;
-    cout << "================================" << endl << endl;
+    // Normalizar con alfa
+    cout << "-- Normalizacion (alfa = 1/" << total << " = " << 1.0/total << ") --" << endl;
+    for (auto& par : distribucion) {
+        par.second /= total;
+        cout << "   P(" << variableConsulta << "=" << par.first << " | evidencia) = " << par.second << endl;
+    }
+    cout << "=========================================" << endl << endl;
 
     return distribucion;
 }

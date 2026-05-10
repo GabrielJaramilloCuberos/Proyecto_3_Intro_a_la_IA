@@ -12,6 +12,6 @@
 using namespace std;
 
 // Obtiene los datos necesarios para realizar las consultas
-bool parsearConsulta(const string& consulta, string& variableConsulta, map<string,bool>& evidencia);
+bool parsearConsulta(const string& consulta, string& variableConsulta, string& valorConsulta, map<string,string>& evidencia);
 
 #endif

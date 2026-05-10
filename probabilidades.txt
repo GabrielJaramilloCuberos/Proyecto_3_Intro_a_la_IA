@@ -1,17 +1,32 @@
-NUBLADO
-true 0.5
-false 0.5
+RAIN
+none 0.7
+light 0.2
+heavy 0.1
 
-LLUVIA | NUBLADO
-NUBLADO=true true 0.8
-NUBLADO=false true 0.2
+MAINTENANCE | RAIN
+RAIN=none yes 0.4
+RAIN=none no 0.6
+RAIN=light yes 0.2
+RAIN=light no 0.8
+RAIN=heavy yes 0.1
+RAIN=heavy no 0.9
 
-ROCIADOR | NUBLADO
-NUBLADO=true true 0.1
-NUBLADO=false true 0.5
+TRAIN | RAIN,MAINTENANCE
+RAIN=none,MAINTENANCE=yes on_time 0.8
+RAIN=none,MAINTENANCE=yes delayed 0.2
+RAIN=none,MAINTENANCE=no on_time 0.9
+RAIN=none,MAINTENANCE=no delayed 0.1
+RAIN=light,MAINTENANCE=yes on_time 0.6
+RAIN=light,MAINTENANCE=yes delayed 0.4
+RAIN=light,MAINTENANCE=no on_time 0.7
+RAIN=light,MAINTENANCE=no delayed 0.3
+RAIN=heavy,MAINTENANCE=yes on_time 0.4
+RAIN=heavy,MAINTENANCE=yes delayed 0.6
+RAIN=heavy,MAINTENANCE=no on_time 0.5
+RAIN=heavy,MAINTENANCE=no delayed 0.5
 
-HIERBAHUMEDA | LLUVIA,ROCIADOR
-LLUVIA=true,ROCIADOR=true true 0.99
-LLUVIA=true,ROCIADOR=false true 0.90
-LLUVIA=false,ROCIADOR=true true 0.90
-LLUVIA=false,ROCIADOR=false true 0.05
+APPOINTMENT | TRAIN
+TRAIN=on_time attend 0.9
+TRAIN=on_time miss 0.1
+TRAIN=delayed attend 0.6
+TRAIN=delayed miss 0.4

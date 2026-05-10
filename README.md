@@ -119,7 +119,7 @@ La red de ejemplo modela la siguiente situación:
 
 ### Compilar
 ```bash
-g++ main.cpp TADS/VariableAleatoria.cpp TADS/RedBayesiana.cpp -o motor
+g++ main.cpp TADS/VariableAleatoria.cpp TADS/RedBayesiana.cpp Utils/utils.cpp -o motor
 ```
 
 ### Ejecutar

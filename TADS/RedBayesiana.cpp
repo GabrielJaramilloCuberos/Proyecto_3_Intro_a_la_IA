@@ -11,26 +11,34 @@
 
 using namespace std;
 
+/** @brief Constructor por defecto. La red inicia sin variables. */
 RedBayesiana::RedBayesiana() {}
 
+/**
+ * @brief Destructor: libera la memoria de todas las variables creadas con new.
+ *        Es suficiente eliminar los valores del mapa; las referencias cruzadas
+ *        en padres/hijos quedan invalidas pero la red deja de existir de todos modos.
+ */
 RedBayesiana::~RedBayesiana() {
     for (auto& par : variablesAleatorias) {
         delete par.second;
     }
 }
 
-// Getters y Setters
+// ──────────────────────────── Getters y Setters ────────────────────────────
 
+/** @brief Retorna el mapa completo de variables para consultas externas. */
 map<string, VariableAleatoria*> RedBayesiana::getVariablesAleatorias() {
     return variablesAleatorias;
 }
 
-// Operaciones propias
+// ──────────────────────────── Operaciones propias ──────────────────────────
 
 /**
- * @brief Agrega una variable aleatoria a la red si no existe aun
+ * @brief Agrega una nueva variable a la red solo si su nombre no existe aun.
+ *        Esto evita duplicados al procesar el archivo de variables.
  *
- * @param nombre Nombre de la variable a agregar
+ * @param nombre Identificador unico de la variable
  */
 void RedBayesiana::agregarVariableAleatoria(string nombre) {
     if (variablesAleatorias.find(nombre) == variablesAleatorias.end()) {
@@ -39,11 +47,11 @@ void RedBayesiana::agregarVariableAleatoria(string nombre) {
 }
 
 /**
- * @brief Crea la conexion padre-hijo entre dos variables,
- * agregandolas a la red si aun no existen
+ * @brief Establece la relacion direccional padre -> hijo entre dos variables.
+ *        Si alguna de las dos variables no existe, la crea antes de conectarlas.
  *
- * @param padre Nombre de la variable padre
- * @param hijo  Nombre de la variable hijo
+ * @param padre Nombre de la variable que influye (nodo origen)
+ * @param hijo  Nombre de la variable influenciada (nodo destino)
  */
 void RedBayesiana::agregarConexiones(string padre, string hijo) {
     agregarVariableAleatoria(padre);
@@ -57,17 +65,23 @@ void RedBayesiana::agregarConexiones(string padre, string hijo) {
 }
 
 /**
- * @brief Carga la tabla de probabilidad condicional desde un archivo de texto.
- * Cada variable puede tener probabilidades incondicionales o condicionales
- * segun el formato del archivo.
+ * @brief Carga las tablas de probabilidad condicional (CPTs) desde un archivo.
  *
- * @param ruta Ruta del archivo de probabilidades
+ * El archivo se procesa linea por linea. Se reconocen tres tipos de lineas:
+ *  1. Solo un token  -> nombre de variable sin padres (probabilidad incondicional)
+ *  2. Linea con '|'  -> encabezado de variable con padres (probabilidad condicional)
+ *  3. Linea de datos -> "valor probabilidad" o "condicion valor probabilidad"
+ *
+ * Solo se almacena P(variable = true). P(false) = 1 - P(true).
+ *
+ * @param ruta Ruta del archivo .txt con las probabilidades
  */
 void RedBayesiana::cargarTablaProbabilidadConjunta(string ruta) {
     cout << "Cargando probabilidades..." << endl << endl;
     ifstream archivo(ruta);
     string linea;
 
+    // Apunta a la variable cuya CPT se esta llenando en cada momento
     VariableAleatoria* variableActual = nullptr;
 
     if (archivo.is_open()) {
@@ -78,7 +92,7 @@ void RedBayesiana::cargarTablaProbabilidadConjunta(string ruta) {
             string a, b;
             ss >> a >> b;
 
-            // Linea con un solo token: nombre de variable (probabilidad incondicional)
+            // Caso 1: linea con un solo token -> encabezado de variable sin padres
             if (b.empty()) {
                 if (variablesAleatorias.find(a) == variablesAleatorias.end()) {
                     continue;
@@ -87,7 +101,7 @@ void RedBayesiana::cargarTablaProbabilidadConjunta(string ruta) {
                 continue;
             }
 
-            // Linea con '|': encabezado de probabilidad condicional
+            // Caso 2: linea con '|' -> encabezado de variable con padres
             if (linea.find('|') != string::npos) {
                 if (variablesAleatorias.find(a) == variablesAleatorias.end()) {
                     cout << "ERROR: Variable no encontrada: " << a << endl;
@@ -97,7 +111,7 @@ void RedBayesiana::cargarTablaProbabilidadConjunta(string ruta) {
                 continue;
             }
 
-            // Linea de datos: extraer tokens
+            // Caso 3: linea de datos -> tokenizar y cargar la probabilidad
             stringstream lectura(linea);
             vector<string> tokens;
             string temporal;
@@ -110,7 +124,7 @@ void RedBayesiana::cargarTablaProbabilidadConjunta(string ruta) {
                 continue;
             }
 
-            // Probabilidad incondicional: "valor probabilidad"
+            // Formato "true/false probabilidad" (variable sin padres, clave vacia)
             if (tokens.size() == 2) {
                 string valor = tokens[0];
                 double probabilidad = stod(tokens[1]);
@@ -118,7 +132,7 @@ void RedBayesiana::cargarTablaProbabilidadConjunta(string ruta) {
                     variableActual->agregarEntradaTabla("", probabilidad);
                 }
             }
-            // Probabilidad condicional: "condicion valor probabilidad"
+            // Formato "condicion true/false probabilidad" (variable con padres)
             else if (tokens.size() == 3) {
                 string condicion    = tokens[0];
                 string valor        = tokens[1];
@@ -136,8 +150,8 @@ void RedBayesiana::cargarTablaProbabilidadConjunta(string ruta) {
 }
 
 /**
- * @brief Muestra en consola cada variable y sus padres
- *
+ * @brief Imprime en consola cada variable con la lista de sus padres directos.
+ *        Util para verificar que la estructura del DAG se cargo correctamente.
  */
 void RedBayesiana::mostrarVariables() {
     for (auto& par : variablesAleatorias) {
@@ -151,8 +165,8 @@ void RedBayesiana::mostrarVariables() {
 }
 
 /**
- * @brief Muestra en consola la tabla de probabilidad condicional de cada variable
- *
+ * @brief Imprime en consola la tabla de probabilidad condicional de cada variable.
+ *        Cada entrada muestra la condicion y su P(variable = true | condicion).
  */
 void RedBayesiana::mostrarTablaProbabilidadConjunta() {
     for (auto& par : variablesAleatorias) {
@@ -164,129 +178,176 @@ void RedBayesiana::mostrarTablaProbabilidadConjunta() {
     cout << endl;
 }
 
-double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia){
-    string clave ="";
+/**
+ * @brief Consulta P(variable = valor | evidencia) directamente desde la CPT.
+ *
+ * Construye la clave de busqueda recorriendo los padres de la variable
+ * y leyendo su valor actual en el mapa de evidencia. Si el valor buscado
+ * es false, retorna 1 - P(true) por complemento.
+ *
+ * @param variable Puntero a la variable cuya probabilidad se busca
+ * @param valor    Valor de la variable (true o false)
+ * @param evidencia Mapa con los valores conocidos de otras variables
+ * @return P(variable = valor | evidencia segun la CPT)
+ */
+double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia) {
+    // Construir la clave concatenando "PADRE=valor," para cada padre
+    string clave = "";
+    for (auto padre : variable->getPadres()) {
+        clave += padre->getNombre() + "=";
 
-    for(auto padre: variable -> getPadres()){
-
-        clave += padre -> getNombre() + "=";
-
-        if(evidencia.find(padre -> getNombre()) == evidencia.end()){
-            cout << "Error: evidencia faltante para " << padre -> getNombre() << endl;
+        if (evidencia.find(padre->getNombre()) == evidencia.end()) {
+            cout << "Error: evidencia faltante para " << padre->getNombre() << endl;
             return 0;
         }
 
-        bool valorPadre = evidencia.at(padre -> getNombre());
-
-        if(evidencia.at(padre -> getNombre())){
-            clave += "true";
-        }
-        else{
-            clave += "false";
-        }
-
+        clave += evidencia.at(padre->getNombre()) ? "true" : "false";
         clave += ",";
     }
 
-    if(!clave.empty()){
+    // Eliminar la ultima coma sobrante
+    if (!clave.empty()) {
         clave.pop_back();
     }
 
-    auto& tabla = variable -> getTablaProbabilidadCondicional();
-    if(tabla.find(clave) == tabla.end()){
+    auto& tabla = variable->getTablaProbabilidadCondicional();
+    if (tabla.find(clave) == tabla.end()) {
         cout << "Error: clave no encontrada: " << clave << endl;
         return 0;
     }
 
     double probabilidad = tabla[clave];
 
-    if(valor){
-        return probabilidad;
-    }
-    
-    return 1-probabilidad;
+    // P(true) viene directo de la tabla; P(false) es su complemento
+    return valor ? probabilidad : 1 - probabilidad;
 }
 
-double RedBayesiana::enumerarTodas(vector<VariableAleatoria*> variables, map<string,bool>& evidencia){
-    if(variables.empty()){
+/**
+ * @brief Implementacion del algoritmo ENUMERATE-ALL.
+ *
+ * Recorre recursivamente todas las variables en orden topologico.
+ * Si la variable ya tiene un valor en la evidencia, usa ese valor directamente.
+ * Si no, suma las dos ramas posibles (true y false) y marginaliza la variable.
+ *
+ * @param variables Lista de variables aun por procesar (en orden topologico)
+ * @param evidencia Mapa de asignaciones conocidas (se modifica temporalmente)
+ * @return Probabilidad conjunta acumulada hasta este punto de la recursion
+ */
+double RedBayesiana::enumerarTodas(vector<VariableAleatoria*> variables, map<string,bool>& evidencia) {
+    // Caso base: no quedan variables por procesar, probabilidad acumulada = 1
+    if (variables.empty()) {
         return 1.0;
     }
 
     VariableAleatoria* varTem = variables[0];
+    vector<VariableAleatoria*> resto(variables.begin() + 1, variables.end());
 
-    vector<VariableAleatoria*> resto(variables.begin()+1, variables.end());
-
-    if(evidencia.find(varTem -> getNombre()) != evidencia.end()){
-        bool valorTem = evidencia[varTem -> getNombre()];
-
+    if (evidencia.find(varTem->getNombre()) != evidencia.end()) {
+        // La variable ya tiene valor asignado -> usar ese valor y continuar
+        bool valorTem = evidencia[varTem->getNombre()];
         return obtenerProbabilidad(varTem, valorTem, evidencia) * enumerarTodas(resto, evidencia);
-
-    }
-    else{
+    } else {
+        // La variable es desconocida -> sumar ambas ramas y marginalizar
         double suma = 0;
 
-        evidencia[varTem -> getNombre()] = true;
+        evidencia[varTem->getNombre()] = true;
         suma += obtenerProbabilidad(varTem, true, evidencia) * enumerarTodas(resto, evidencia);
 
-        evidencia[varTem -> getNombre()] = false;
+        evidencia[varTem->getNombre()] = false;
         suma += obtenerProbabilidad(varTem, false, evidencia) * enumerarTodas(resto, evidencia);
 
-        evidencia.erase(varTem -> getNombre());
+        // Restaurar la evidencia antes de retornar
+        evidencia.erase(varTem->getNombre());
 
         return suma;
     }
 }
 
-map<bool,double> RedBayesiana::consultaPorEnumeracion(string variableConsulta, map<string,bool>& evidencia){
+/**
+ * @brief Calcula la distribucion de probabilidad P(X | evidencia) usando
+ *        inferencia exacta por enumeracion.
+ *
+ * Ejecuta ENUMERATE-ALL dos veces (una para X=true, otra para X=false)
+ * y normaliza los resultados con el factor alfa = 1 / (P(true) + P(false)).
+ *
+ * @param variableConsulta Nombre de la variable X que se quiere inferir
+ * @param evidencia        Mapa de variables observadas con su valor conocido
+ * @return Mapa {true -> P(X=true|e), false -> P(X=false|e)} normalizado
+ */
+map<bool,double> RedBayesiana::consultaPorEnumeracion(string variableConsulta, map<string,bool>& evidencia) {
     map<bool,double> distribucion;
-
-    VariableAleatoria* varX = variablesAleatorias[variableConsulta];
 
     vector<VariableAleatoria*> variables = obtenerOrdenTopologico();
 
+    // Calcular probabilidad conjunta para cada posible valor de la variable consulta
     evidencia[variableConsulta] = true;
     double probVerdadero = enumerarTodas(variables, evidencia);
 
     evidencia[variableConsulta] = false;
-    double probFalse = enumerarTodas(variables, evidencia);
+    double probFalso = enumerarTodas(variables, evidencia);
 
+    // Eliminar la variable consulta de la evidencia antes de retornar
     evidencia.erase(variableConsulta);
 
-    double alfa = probFalse + probVerdadero;
-
-    distribucion[true] = probVerdadero/alfa;
-    distribucion[false] = probFalse/alfa;
+    // Normalizar: alfa garantiza que la distribucion sume 1
+    double alfa = probVerdadero + probFalso;
+    distribucion[true]  = probVerdadero / alfa;
+    distribucion[false] = probFalso     / alfa;
 
     return distribucion;
 }
 
-void RedBayesiana::dfsTopologico(VariableAleatoria* variable, map<string,bool>& variablesVisitadas, vector<VariableAleatoria*>& orden){
-    variablesVisitadas[variable -> getNombre()] = true;
+/**
+ * @brief Funcion auxiliar DFS para el ordenamiento topologico.
+ *
+ * Visita en profundidad todos los hijos de la variable actual antes
+ * de agregarla al vector de orden. Al invertir el resultado en
+ * obtenerOrdenTopologico() se obtiene el orden correcto (padres antes que hijos).
+ *
+ * @param variable           Variable actual en la recursion
+ * @param variablesVisitadas Mapa que indica si una variable ya fue procesada
+ * @param orden              Vector donde se acumula el orden de visita
+ */
+void RedBayesiana::dfsTopologico(VariableAleatoria* variable, map<string,bool>& variablesVisitadas, vector<VariableAleatoria*>& orden) {
+    variablesVisitadas[variable->getNombre()] = true;
 
-    for(auto hijo: variable -> getHijos()){
-        if(!variablesVisitadas[hijo -> getNombre()]){
+    // Visitar primero todos los hijos no visitados
+    for (auto hijo : variable->getHijos()) {
+        if (!variablesVisitadas[hijo->getNombre()]) {
             dfsTopologico(hijo, variablesVisitadas, orden);
         }
     }
 
+    // Agregar esta variable despues de haber procesado sus descendientes
     orden.push_back(variable);
 }
 
-vector<VariableAleatoria*> RedBayesiana::obtenerOrdenTopologico(){
+/**
+ * @brief Retorna las variables de la red en orden topologico (padres antes que hijos).
+ *
+ * Usa DFS post-orden sobre el DAG y luego invierte el resultado.
+ * Este orden es necesario para que ENUMERATE-ALL siempre tenga disponibles
+ * los valores de los padres antes de evaluar a sus hijos.
+ *
+ * @return Vector de punteros a VariableAleatoria en orden topologico
+ */
+vector<VariableAleatoria*> RedBayesiana::obtenerOrdenTopologico() {
     vector<VariableAleatoria*> orden;
-
     map<string,bool> variablesVisitadas;
 
-    for(auto& par: variablesAleatorias){
+    // Inicializar todas las variables como no visitadas
+    for (auto& par : variablesAleatorias) {
         variablesVisitadas[par.first] = false;
     }
 
-    for(auto& par: variablesAleatorias){
-        if(!variablesVisitadas[par.first]){
+    // Ejecutar DFS desde cada nodo no visitado (maneja grafos desconectados)
+    for (auto& par : variablesAleatorias) {
+        if (!variablesVisitadas[par.first]) {
             dfsTopologico(par.second, variablesVisitadas, orden);
         }
     }
 
+    // DFS produce post-orden; invertir da el orden topologico correcto
     reverse(orden.begin(), orden.end());
 
     return orden;

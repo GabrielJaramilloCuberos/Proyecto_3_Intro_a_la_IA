@@ -12,23 +12,34 @@
 
 using namespace std;
 
+/**
+ * @brief Representa un nodo dentro de una Red Bayesiana.
+ *
+ * Cada variable aleatoria tiene un nombre unico, conoce a sus padres
+ * (variables de las que depende) y a sus hijos (variables que dependen de ella).
+ * Tambien almacena su tabla de probabilidad condicional (CPT), que mapea
+ * una combinacion de valores de los padres a P(variable = true).
+ */
 class VariableAleatoria {
 
     private:
-        // Nombre identificador de la variable
+        // Nombre unico que identifica la variable en la red
         string nombre;
-        // Lista de punteros a las variables padre en la red bayesiana
+        // Punteros a las variables de las que esta variable depende directamente
         vector<VariableAleatoria*> padres;
-        // Lista de punteros a las variables hijo en la red bayesiana
+        // Punteros a las variables que dependen directamente de esta variable
         vector<VariableAleatoria*> hijos;
-        // Tabla de probabilidad condicional: clave = condicion, valor = probabilidad
+        // Tabla de probabilidad condicional (CPT).
+        // Clave: string con los valores de los padres, ej. "LLUVIA=true,ROCIADOR=false"
+        // Valor: P(esta variable = true | condicion de los padres)
+        // Si la variable no tiene padres, la clave es "" (string vacio)
         map<string, double> tablaProbabilidadCondicional;
 
     public:
-        // Constructor
+        // Constructor: inicializa la variable con su nombre
         VariableAleatoria(string nombre);
 
-        // Destructor
+        // Destructor por defecto
         ~VariableAleatoria();
 
         // Getters y Setters
@@ -40,8 +51,12 @@ class VariableAleatoria {
         void setTablaProbabilidadCondicional(map<string, double> tabla);
 
         // Operaciones propias
+
+        // Registra una variable como padre de esta
         void agregarPadre(VariableAleatoria* padre);
+        // Registra una variable como hijo de esta
         void agregarHijo(VariableAleatoria* hijo);
+        // Inserta o actualiza una entrada en la tabla de probabilidad condicional
         void agregarEntradaTabla(string clave, double probabilidad);
 
 };

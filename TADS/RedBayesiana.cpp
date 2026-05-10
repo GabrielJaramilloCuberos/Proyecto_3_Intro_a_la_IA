@@ -167,32 +167,26 @@ void RedBayesiana::mostrarTablaProbabilidadConjunta() {
 double RedBayesiana::obtenerProbabilidad(VariableAleatoria* variable, bool valor, map<string,bool>& evidencia){
     string clave ="";
 
-    vector<VariableAleatoria*> padres = variable->getPadres();
+    for(auto padre: variable -> getPadres()){
 
-sort(padres.begin(), padres.end(),
-[](VariableAleatoria* a, VariableAleatoria* b){
-    return a->getNombre() < b->getNombre();
-});
+        clave += padre -> getNombre() + "=";
 
-for(auto padre : padres){
+        if(evidencia.find(padre -> getNombre()) == evidencia.end()){
+            cout << "Error: evidencia faltante para " << padre -> getNombre() << endl;
+            return 0;
+        }
 
-    clave += padre->getNombre() + "=";
+        bool valorPadre = evidencia.at(padre -> getNombre());
 
-    if(evidencia.find(padre->getNombre()) == evidencia.end()){
-        cout << "Error: evidencia faltante para "
-             << padre->getNombre() << endl;
-        return 0;
+        if(evidencia.at(padre -> getNombre())){
+            clave += "true";
+        }
+        else{
+            clave += "false";
+        }
+
+        clave += ",";
     }
-
-    if(evidencia.at(padre->getNombre())){
-        clave += "true";
-    }
-    else{
-        clave += "false";
-    }
-
-    clave += ",";
-}
 
     if(!clave.empty()){
         clave.pop_back();

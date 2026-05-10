@@ -6,8 +6,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include "TADS/RedBayesiana.h"
+#include "Utils/utils.h"
 
 using namespace std;
 
@@ -147,32 +147,30 @@ int main() {
                 break;
             }
 
+            cin.ignore();
+
+            cout << endl << "Ingrese la consulta [Formato: P(VARIABLE=valor | EVIDENCIA1=valor,EVIDENCIA2=valor, ...)]: ";
+            string consulta;
+            getline(cin, consulta);
+
             string variableConsulta;
-            cout << endl << "Ingrese la variable de consulta: ";
-            cin >> variableConsulta;
-
-            // Recopilar las variables observadas (evidencia)
-            int cantidadEvidencias;
-            cout << "Ingrese la cantidad de evidencias: ";
-            cin >> cantidadEvidencias;
-
             map<string,bool> evidencia;
-            for (int i = 0; i < cantidadEvidencias; i++) {
-                string variable;
-                string valorVariable;
-                cout << endl << "Ingrese la variable de evidencia: ";
-                cin >> variable;
-                cout << "Ingrese valor (true/false): ";
-                cin >> valorVariable;
-                evidencia[variable] = (valorVariable == "true");
+
+            if (!parsearConsulta(consulta, variableConsulta, evidencia)) {
+                cout << "Error: formato de consulta invalido." << endl << endl;
+                break;
             }
 
-            // Ejecutar la inferencia y mostrar la distribucion normalizada
+            if (contenedor.find(variableConsulta) == contenedor.end()) {
+                cout << "Error: la variable '" << variableConsulta << "' no existe en la red." << endl << endl;
+                break;
+            }
+
             map<bool,double> resultado = redBayesiana.consultaPorEnumeracion(variableConsulta, evidencia);
 
             cout << endl << "P(" << variableConsulta << "=true  | evidencia) = " << resultado[true]  << endl;
-            cout <<         "P(" << variableConsulta << "=false | evidencia) = " << resultado[false] << endl << endl;
-
+            cout << "P(" << variableConsulta << "=false | evidencia) = " << resultado[false] << endl << endl;
+            
             break;
         }
 
